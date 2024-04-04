@@ -73,9 +73,13 @@ def parse_sqlx(file_contents: str):
     # split the text into a config block section and remaining text
     config_block_string = extract_block(file_contents, "config")
     js_block_string = extract_block(file_contents, "js")
+    pre_operations_string = extract_block(file_contents, "pre_operations")
+    post_operations_string = extract_block(file_contents, "post_operations")
     remaining_text = (
         file_contents.replace(config_block_string, "")
         .replace(js_block_string, "")
+        .replace(pre_operations_string, "")
+        .replace(post_operations_string, "")
         .strip()
         + "\n"
     )
@@ -94,6 +98,8 @@ def parse_sqlx(file_contents: str):
     return {
         "config": config_block_string,
         "js": js_block_string,
+        "pre_operations": pre_operations_string,
+        "post_operations": post_operations_string,
         "main": remaining_text,
         "templates": masks,
     }
