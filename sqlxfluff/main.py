@@ -5,7 +5,7 @@ import sqlfluff
 from sqlfluff.core import FluffConfig
 from termcolor import cprint
 
-from .constants import EXIT_FAIL
+from .constants import EXIT_FAIL, EXIT_SUCCESS
 from .formatters.javascript import validate_prettier_installation
 from .formatters.sqlx import format_sqlx
 from .linting import parse_sql, print_lint_result
@@ -20,6 +20,10 @@ def main():
     parser = argparse.ArgumentParser(
         description="A script that formats and lints Dataform SQLX files."
     )
+    parser.add_argument('function', help='Function to execute', choices=['fix', 'lint'])
+    parser.add_argument(
+        "-f", "--format", help="Output format for linter", default="human", choices=["human", "json"]
+    )
     parser.add_argument(
         "-c", "--config-path", help="Path to the configuration file", default=None
     )
@@ -31,7 +35,7 @@ def main():
         "files", metavar="FILE", type=str, nargs="+", help="File paths to process"
     )
     opts = parser.parse_args()
-
+    function = opts.function
     for filename in opts.files:
         config = FluffConfig.from_path(
             filename if opts.config_path is None else opts.config_path
@@ -52,25 +56,30 @@ def main():
         if parsing_violations is not None:
             cprint(parsing_violations, "red")
             exit(EXIT_FAIL)
+        if function == "lint":
+            lint_result = sqlfluff.lint(parsed_file_contents["main"], config=config, format="json")
+            if not lint_result:
+                cprint("PASS", color="green")
+                exit(EXIT_SUCCESS)
+            else:
+                cprint("FAIL", color="red")
+                if opts.format == "human":
+                    for result in lint_result:
+                        print_lint_result(result)
+                exit(EXIT_FAIL)
 
-        lint_result = sqlfluff.lint(parsed_file_contents["main"], config=config)
-        if not lint_result:
-            cprint("PASS", color="green")
-        else:
-            cprint("FAIL", color="red")
-            for result in lint_result:
-                print_lint_result(result)
-
-        formatted_file_contents = format_sqlx(parsed_file_contents, config)
-        formatted_file_contents_again = format_sqlx(
-            parse_sqlx(formatted_file_contents), config
-        )
-        if formatted_file_contents != formatted_file_contents_again:
-            cprint("Formatter unable to determine final formatted form.", "red")
-            exit(EXIT_FAIL)
-
-        with open(filename, "w", encoding="utf-8") as f:
-            f.write(formatted_file_contents)
+        if function == "fix":
+            formatted_file_contents = format_sqlx(parsed_file_contents, config)
+            formatted_file_contents_again = format_sqlx(
+                parse_sqlx(formatted_file_contents), config
+            )
+            if formatted_file_contents != formatted_file_contents_again:
+                cprint("Formatter unable to determine final formatted form.", "red")
+                exit(EXIT_FAIL)
+    
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(formatted_file_contents)
+            exit(EXIT_SUCCESS)
 
         print()
 
