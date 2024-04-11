@@ -1,5 +1,6 @@
 import sqlfluff
 from sqlfluff.api import APIParsingError
+from sqlfluff.core import Linter
 from termcolor import colored
 
 
@@ -24,3 +25,12 @@ def print_lint_result(result):
     print(colored(f"L:{line_no:4} | P:{line_pos:4} | {code:4} |", "blue"), description)
     bold_name = colored(name, attrs=["bold"])
     print(" " * 23 + colored("|", "blue"), f"[{bold_name}]")
+
+
+def sqlfluff_lint(sql, config):
+    cfg = config
+    linter = Linter(config=cfg)
+
+    result = linter.lint_string_wrapped(sql)
+    result_records = result.as_records()
+    return result_records

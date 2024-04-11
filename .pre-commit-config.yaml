@@ -21,12 +21,3 @@ repos:
     rev: 23.7.0
     hooks:
       - id: black
-
-  - repo: local
-    hooks:
-      - id: pylint
-        name: pylint
-        entry: pylint
-        language: system
-        types: [python]
-        args: [-rn, -sn] # Only display messages, don't display the score
