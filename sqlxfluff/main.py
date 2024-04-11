@@ -67,11 +67,11 @@ def main():
                 cprint(parsing_violations, "red")
 
             lint_result = sqlfluff_lint(sql=parsed_file_contents["main"], config=config)
-            violations = lint_result[0]["violations"]
-            if not violations:
+            if not lint_result:
                 if fmt == "human":
                     cprint("PASS", color="green")
             else:
+                violations = lint_result[0]["violations"]
                 if opts.format == "human":
                     cprint("FAIL", color="red")
                     for result in violations:
